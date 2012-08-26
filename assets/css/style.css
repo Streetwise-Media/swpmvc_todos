@@ -1,0 +1,33 @@
+.btn-primary {
+        background-color: 
+        #2B54FB;
+    }
+
+.form-actions, .existing_todo {
+    background-color: 
+    #ECECEC;
+    margin-top: 18px;
+    margin-bottom: 18px;
+    width: 100%;
+}
+
+.existing_todo {
+        display:block;
+        overflow:hidden;
+}
+
+.existing_todo .completed {
+        float:right;
+}
+
+.existing_todo_desc_input {
+        display:none;
+}
+
+.existing_todo.completed_1 {
+        text-decoration: line-through;
+}
+
+.todos_user span {
+    font-style: italic;
+}
