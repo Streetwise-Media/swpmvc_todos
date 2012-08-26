@@ -649,7 +649,7 @@ Add a file called show_users_todos.tpl to the views subdirectory of your plugin 
         <!-- has_todos -->
             <h3><!-- display_name --><!-- /display_name -->s Todos</h3>
             <!-- existing_todos -->
-                <div class="existing_todo">
+                <div class="existing_todo completed_<!-- completed --><!-- /completed -->">
                     <!-- description --><!-- description -->
                 </div>
             <!-- /existing_todos -->
