@@ -11,7 +11,7 @@ your own todo list, you will be able to add and edit items on your list.
 *   The /todos/{{user\_nicename}} url will show a specific users todo list. When viewing another users todo list, it will be shown in a
 read only mode
 
-##Perparing the main plugin file
+##Preparing the main plugin file
 
 I love code generation, but unfortunately haven't added any to the swpMVC framework. In settling for the next best thing, we can
 start by simply copying the contents of the swpmvc/starter_plugin folder to a new directory where our todos plugin will live.
