@@ -581,3 +581,25 @@ Add the following two methods to your TodosController to handle these new routes
             $todo->save();
             return;
         }
+        
+Our /mytodos page is now fully functional (could use a delete feature but I'll leave that to you to implement.) Let's go back
+and refactor the script localization to use the controller::link methods instead of hard coded URLs. Update the script localization
+definitions in the edit\_todos\_list method of the TodosController as follows:
+
+    <?php
+    
+        $this->_script_localizations = array(
+            array('edit_todos', 'todoEdit', array(
+                            'update_url' => self::link('TodosController', 'update_todo', array('')),
+                            'toggle_url' => self::link('TodosController', 'toggle_todo', array(''))
+                        )
+                )  
+        );
+        
+And then update the edit_todos.js file to account for the new trailing slashes in the URLs, on line 11
+
+    $.post(todoEdit.update_url+$el.attr('id').split('_')[1], {description: $el.val()}, function() {
+    
+and on line 17
+
+    $.get(todoEdit.toggle_url+$el.attr('id').split('_')[1], function() {

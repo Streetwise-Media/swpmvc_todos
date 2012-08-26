@@ -31,7 +31,8 @@ class TodosController extends swpMVCBaseController
         );
         $this->_script_localizations = array(
             array('edit_todos', 'todoEdit', array(
-                            'update_url' => get_bloginfo('url').'/todo/update', 'toggle_url' => get_bloginfo('url').'/todo/toggle'
+                            'update_url' => self::link('TodosController', 'update_todo', array('')),
+                            'toggle_url' => self::link('TodosController', 'toggle_todo', array(''))
                         )
                 )  
         );
