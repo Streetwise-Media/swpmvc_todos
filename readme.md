@@ -97,7 +97,7 @@ we can save a list and start seeing things work. First add the route to the add\
             );
             $routes[] = array(
                 'controller' => 'TodosController', 'method' => 'edit_todos_list',
-                'route' => 'todo/mine'
+                'route' => '/mytodos'
             );
             return $routes;
         }
