@@ -82,7 +82,7 @@ To test this out, make sure the Todos plugin is active, and go to the /todos/dev
 underwhelming "Hello developer!" message there. Try a few other routes, like /todos/dawg, /todos/fool, etc, to see the dynamic
 goodness, and when you're bored of that, let's move on to more interesting stuff.
 
-##First _Real_ Route
+##First Real Route
 
 For our app to do anything (no pun,) we need to get some data into the database. Let's get the personal todos interface working so
 we can save a list and start seeing things work. First add the route to the add\_routes method in your plugin class as follows:
