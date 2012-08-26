@@ -90,4 +90,43 @@ class TodosController extends swpMVCBaseController
         $todo->save();
         return;
     }
+    
+    public function show_users_todos($user_nicename = false)
+    {
+        if (!$user_nicename) return $this->set404();
+        $user = TodosUser::find(array('conditions' => array('user_nicename = ?', $user_nicename),
+                    'include' => 'todos'));
+        if (!$user) return $this->set404();
+        get_header();
+        $existing_todos = '';
+        foreach($user->todos as $todo)
+            $existing_todos .= $todo->render($this->template('show_users_todos')->copy('existing_todos'));
+        $output = $user->render($this->template('show_users_todos'))->replace('existing_todos', $existing_todos);
+        if ($existing_todos === '')
+                $output = $output->replace('has_todos', '<h3>'.$user->display_name.' doesn\'t have any todos yet.</h3>');
+        echo $output;
+        get_footer();
+    }
+    
+    public function index()
+    {
+        $ids = _::map(Todos::all(array('select' => 'DISTINCT user_id')), function($td) { return $td->user_id; });
+        $users = TodosUser::find($ids, array('include' => 'todos'));
+        if (!is_array($users)) $users = array($users);
+        get_header();
+        $todos_users = '';
+        foreach($users as $user)
+        {
+            $finished_count = count(_::filter($user->todos, function($td) { return intval($td->completed) === 1; }));
+            $unfinished_count = count(_::filter($user->todos, function($td) { return intval($td->completed) === 0; }));
+            $todos_users .= $user->render($this->template('index')->copy('todos_user'))
+                                            ->replace('finished_count', $finished_count)
+                                            ->replace('unfinished_count', $unfinished_count)
+                                            ->replace('view_link',
+                                                    self::link('TodosController', 'show_users_todos', array($user->user_nicename)));
+        }
+        if ($todos_users === '') $todos_users = '<h3>No users with Todos yet.</h3>';
+        echo $this->template('index')->replace('todos_user', $todos_users);
+        get_footer();
+    }
 }

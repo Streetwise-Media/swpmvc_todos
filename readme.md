@@ -179,7 +179,7 @@ class. Copy it, and add it to your TodosUser model, adding a definition for a To
                 array('posts', 'foreign_key' => 'post_author', 'limit' => 10, 'conditions' => array('post_status = ?', 'publish')),
                 array('comments', 'foreign_key' => 'user_id', 'limit' => 10),
                 array('meta', 'class' => 'UserMeta', 'foreign_key' => 'user_id'),
-                array('todos', 'class' => 'Todo', 'foreign_key' => 'user_id')
+                array('todos', 'class' => 'Todos', 'foreign_key' => 'user_id')
             );
         }
         
@@ -320,6 +320,10 @@ the below contents:
     
     .existing_todo_desc_input {
             display:none;
+    }
+    
+    .existing_todo.completed_1 {
+            text-decoration: line-through;
     }
 
 Let's assume we want to include our stylesheet on all of the routes handled by this controller. The easy way to do this is using
@@ -603,3 +607,141 @@ And then update the edit_todos.js file to account for the new trailing slashes i
 and on line 17
 
     $.get(todoEdit.toggle_url+$el.attr('id').split('_')[1], function() {
+    
+With this in good shape, we can start on the next page of our app.
+
+##Looking at other users todos
+
+The next route we want to take on is the /todos/{{user_nicename}} URL, which should show a read only version of a users todo
+list. Add the following route to your swpMVC_Todos->add_routes method:
+
+    <?php
+    
+        $routes[] = array(
+            'controller' => 'TodosController', 'method' => 'show_users_todos',
+            'route' => '/todos/:p'
+        );
+        
+And then the following method to your TodosController:
+
+    <?php
+    
+        public function show_users_todos($user_nicename = false)
+        {
+            if (!$user_nicename) return $this->set404();
+            $user = TodosUser::find(array('conditions' => array('user_nicename = ?', $user_nicename),
+                        'include' => 'todos'));
+            if (!$user) return $this->set404();
+            get_header();
+            Console::log($user);
+            get_footer();
+        }
+        
+Go to /todos/admin (or whatever your user_nicename is) and you should see a user object in the PHP Quick Profiler Console,
+with the related todos nested in the relationships property.
+
+Add a file called show_users_todos.tpl to the views subdirectory of your plugin folder, with the following contents:
+
+    <div id="content">
+        <!-- has_todos -->
+            <h3><!-- display_name --><!-- /display_name -->s Todos</h3>
+            <!-- existing_todos -->
+                <div class="existing_todo">
+                    <!-- description --><!-- description -->
+                </div>
+            <!-- /existing_todos -->
+        <!-- /has_todos -->
+    </div>
+    
+Then update the TodosController->show\_users\_todos method to render the view as follows:
+
+    <?php
+    
+        public function show_users_todos($user_nicename = false)
+        {
+            if (!$user_nicename) return $this->set404();
+            $user = TodosUser::find(array('conditions' => array('user_nicename = ?', $user_nicename),
+                        'include' => 'todos'));
+            if (!$user) return $this->set404();
+            get_header();
+            $existing_todos = '';
+            foreach($user->todos as $todo)
+                $existing_todos .= $todo->render($this->template('show_users_todos')->copy('existing_todos'));
+            $output = $user->render($this->template('show_users_todos'))->replace('existing_todos', $existing_todos);
+            if ($existing_todos === '')
+                $output = $output->replace('has_todos', '<h3>'.$user->display_name.' doesn\'t have any todos yet.</h3>');
+            echo $output;
+            get_footer();
+        }
+        
+Reload todos/admin and have a look. Easy, huh? Let's take care of that last route and wrap things up.
+
+##Showing an Index of users with Todos
+
+Again we start adding the route in the plugin class add\_routes method:
+
+    <?php
+    
+        $routes[] = array(
+            'controller' => 'TodosController', 'method' => 'index',
+            'route' => '/todos'
+        );
+        
+Then we start the controller method and get our data:
+
+    <?php
+    
+        public function index()
+        {
+            $ids = _::map(Todos::all(array('select' => 'DISTINCT user_id')), function($td) { return $td->user_id; });
+            $users = TodosUser::find($ids, array('include' => 'todos'));
+            get_header();
+            Console::log($users);
+            get_footer();
+        }
+
+You'll notice use of \_::map in this method. This functionality is provided by a
+[slightly modified version of Underscore PHP](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#logging-utility/underscore-php)
+which is included in the swpMVC framework.
+       
+Now add the following to a new file called index.tpl in the views subdirectory of your plugin folder:
+
+    <div id="content">
+        <h2>Users with Todos</h2>
+        <!-- todos_user -->
+            <div class="todos_user">
+                <a href="<!-- view_link --><!-- /view_link -->"><h3><!-- display_name --><!-- /display_name --></h3></a>
+                <span><!-- finished_count --><!-- /finished_count --> complete</span>
+                <span><!-- unfinished_count --><!-- /unfinished_count --> remaining</span>
+            </div>
+        <!-- /todos_user -->
+    </div>
+    
+And update your controller method with the following:
+
+    public function index()
+    {
+        $ids = _::map(Todos::all(array('select' => 'DISTINCT user_id')), function($td) { return $td->user_id; });
+        $users = TodosUser::find($ids, array('include' => 'todos'));
+        if (!is_array($users)) $users = array($users);
+        get_header();
+        $todos_users = '';
+        foreach($users as $user)
+        {
+            $finished_count = count(_::filter($user->todos, function($td) { return intval($td->completed) === 1; }));
+            $unfinished_count = count(_::filter($user->todos, function($td) { return intval($td->completed) === 0; }));
+            $todos_users .= $user->render($this->template('index')->copy('todos_user'))
+                                            ->replace('finished_count', $finished_count)
+                                            ->replace('unfinished_count', $unfinished_count)
+                                            ->replace('view_link',
+                                                    self::link('TodosController', 'show_users_todos', array($user->user_nicename)));
+        }
+        if ($todos_users === '') $todos_users = '<h3>No users with Todos yet.</h3>';
+        echo $this->template('index')->replace('todos_user', $todos_users);
+        get_footer();
+    }
+    
+That completes the Todos App tutorial, and hopefully gives you a reasonably in-depth view of the swpMVC framework. For further
+detail, see the [API Docs](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/) or
+[open an issue](https://github.com/Streetwise-Media/Streetwise-Wordpress-MVC/issues?state=open) on the framework repo
+or the repo for this Todo plugin.

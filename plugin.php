@@ -60,6 +60,14 @@ class swpMVC_Todos
                     'controller' => 'TodosController', 'method' => 'toggle_todo',
                     'route' => '/todo/toggle/:p'
         );
+        $routes[] = array(
+            'controller' => 'TodosController', 'method' => 'show_users_todos',
+            'route' => '/todos/:p'
+        );
+        $routes[] = array(
+            'controller' => 'TodosController', 'method' => 'index',
+            'route' => '/todos'
+        );
         return $routes;
     }
     

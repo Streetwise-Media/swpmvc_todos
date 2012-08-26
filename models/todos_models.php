@@ -6,7 +6,7 @@
             array('posts', 'foreign_key' => 'post_author', 'limit' => 10, 'conditions' => array('post_status = ?', 'publish')),
             array('comments', 'foreign_key' => 'user_id', 'limit' => 10),
             array('meta', 'class' => 'UserMeta', 'foreign_key' => 'user_id'),
-            array('todos', 'class' => 'Todo', 'foreign_key' => 'user_id')
+            array('todos', 'class' => 'Todos', 'foreign_key' => 'user_id')
         );
     }
     

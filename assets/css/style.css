@@ -23,3 +23,11 @@
 .existing_todo_desc_input {
         display:none;
 }
+
+.existing_todo.completed_1 {
+        text-decoration: line-through;
+}
+
+.todos_user span {
+        font-style: italic;
+}
