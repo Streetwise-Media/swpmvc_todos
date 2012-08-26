@@ -535,6 +535,8 @@ and toggle_url properties defined correctly. Add the following to the edit\_todo
                     )  
             );
             // query for todos and render output
+            
+Be sure to update the url to your js file to reflect your plugin folder structure.
         
 We've invented two new URLs, so let's add the routes and controller methods to handle them. Again we'll then refactor our
 script localizations to use the controller::link method rather than hard coding urls.
