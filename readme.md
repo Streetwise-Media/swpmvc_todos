@@ -516,7 +516,8 @@ a folder called js, and in that, place a file called edit\_todos.js with the fol
         });
     }(jQuery, window));
     
-With the javascript written, we need to enqueue it and localize it so it will have access to the todoEdit variable, with update_url
+With the javascript written, we need to enqueue it and localize it so it will have access to the todoEdit variable
+referenced on lines 11 and 17 of edit\_todos.js, with update_url
 and toggle_url properties defined correctly. Add the following to the edit\_todos\_list method of your TodosController:
 
     <?php
