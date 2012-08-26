@@ -325,6 +325,10 @@ the below contents:
     .existing_todo.completed_1 {
             text-decoration: line-through;
     }
+    
+    .todos_user span {
+        font-style: italic;
+    }
 
 Let's assume we want to include our stylesheet on all of the routes handled by this controller. The easy way to do this is using
 the controller [before method](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#controllers/public-function-before)
