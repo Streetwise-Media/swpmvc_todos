@@ -5,7 +5,10 @@
     <script>
       DocumentUp.document({
           repo: "Streetwise-Media/swpmvc_todos",
-          theme: "v1"
+          theme: "v1",
+          afterRender: function(){
+            $('pre').css('width', '1000px');
+          }
       });
     </script>
   </head>
