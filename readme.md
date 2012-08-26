@@ -1,4 +1,4 @@
-###swpMVC Todos
+##swpMVC Todos
 
 To get familiar with the swpMVC framework as quickly as possible, we'll walk through the obligatory Todo App example.
 
@@ -11,7 +11,7 @@ your own todo list, you will be able to add and edit items on your list.
 *   The /todos/{{user\_nicename}} url will show a specific users todo list. When viewing another users todo list, it will be shown in a
 read only mode
 
-####Perparing the main plugin file
+###Perparing the main plugin file
 
 I love code generation, but unfortunately haven't added any to the swpMVC framework. In settling for the next best thing, we can
 start by simply copying the contents of the swpmvc/starter_plugin folder to a new directory where our todos plugin will live.
@@ -21,7 +21,7 @@ Once those files have been copied over, open up plugin.php in your editor, and m
 *   Edit the plugin header comments at top to contain your info.
 *   Change the plugin class name, and references to it on lines 12, 26, and 47 from swpMVC\_Starter to swpMVC\_Todos
 
-####Creating a controller
+###Creating a controller
 
 Before we fill out the add\_routes method in our plugin method, we should create a controller for our app that will handle those routes,
 and require it in the require\_dependencies method of the plugin class. Create a new file in the controllers subfolder of your plugin
@@ -45,7 +45,7 @@ method on line 30 of your plugin.php file:
             require_once(dirname(__FILE__).'/controllers/TodosController.php');
         }
         
-####First Route
+###First Route
 
 Our controller is being bootstrapped by the plugin class, so let's create the first route, and then the controller method to handle it.
 In the add\_routes method of the swpMVC\_Todos class, on line 40 of plugin.php, add the following code:
@@ -82,7 +82,7 @@ To test this out, make sure the Todos plugin is active, and go to the /todos/dev
 underwhelming "Hello developer!" message there. Try a few other routes, like /todos/dawg, /todos/fool, etc, to see the dynamic
 goodness, and when you're bored of that, let's move on to more interesting stuff.
 
-####First _Real_ Route
+###First _Real_ Route
 
 For our app to do anything (no pun,) we need to get some data into the database. Let's get the personal todos interface working so
 we can save a list and start seeing things work. First add the route to the add\_routes method in your plugin class as follows:
@@ -118,7 +118,7 @@ You should be redirected to the login page, and on login redirected back to /myt
 In order to get the most out of the process, we'll be using a custom table for our todos, and creating a model for them. Before we
 create the interface to edit a todo list, we'll need to take care of those parts.
 
-####Creating a table
+###Creating a table
 
 This part is not specific to the framework at all, we'll just use
 [WordPress conventions](http://codex.wordpress.org/Creating_Tables_with_Plugins).
@@ -151,7 +151,7 @@ And then add it to the plugin activation hook at the bottom of plugin.php as fol
         
 Now reactivate your plugin, and check your database. You should see the table there.
 
-####Creating Models
+###Creating Models
 
 Our edit route needs to look up a list of todos based on user, so we'll need to define the relationship between users and todos. We
 can do this by extending the User model that ships with the framework, and amending the $has_many relationship on our extended
@@ -209,7 +209,7 @@ Note that for code organization purposes, it's often better to separate your mod
 own files, particularly once you start to add additional logic and they grow in length. For our purposes, these models are simple
 enough to keep in one place.
 
-####Defining Model controls
+###Defining Model controls
 
 We'll want to take advantage of the models ability to render themselves, so let's
 [define the controls](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#models/public-static-function-controls)
@@ -242,7 +242,7 @@ This is a good time to require our models in the require_dependencies method of 
             require_once(dirname(__FILE__).'/models/todos_models.php');
         }
         
-####New Todo Form View
+###New Todo Form View
 
 Now that our Todos Model is aware of the form controls needed to interact with its properties, we can take advantage of this by
 creating a view with the correct tags to generate a form that will let us create a new Todo. Create a file called edit_todos.tpl in the
@@ -263,7 +263,7 @@ views subdirectory of your plugin folder, and add the below HTML:
         <!-- /new_todo_form -->
     </div>
     
-####Rendering the view
+###Rendering the view
 
 Before we can easily access our views, we need to set the view folder for our controller. Define a \_\_construct method for the
 TodosController as follows:
@@ -339,7 +339,7 @@ to match your plugin folder structure:
 
 Reload the /mytodos page again and you should see the styles applied to the form.
 
-####Processing form submission
+###Processing form submission
 
 We've pointed our form to /todo/create, so we should probably point a route there and create a controller method to handle it.
 Once we're done, we'll refactor the way we define this in the view to prevent us having to update references to the route if we
@@ -409,7 +409,7 @@ And then update the edit_todos method of the TodosController class to populate t
             get_footer();
         }
         
-####Showing existing Todos
+###Showing existing Todos
 
 Now that we can get data in, it's time to get that data out, and show existing todos in the edit\_todos\_list method. First let's
 query for the Todos items, and log the results to the console so we can see what we get back. If you haven't yet, enable the
