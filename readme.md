@@ -588,7 +588,7 @@ Add the following two methods to your TodosController to handle these new routes
             $todo = Todos::find($id);
             if (!$todo) return;
             if ($todo->user_id !== get_current_user_id()) return;
-            $todo->completed = (intval($todo->completed === 0)) ? 1 : 0;
+            $todo->completed = (intval($todo->completed) === 0) ? 1 : 0;
             $todo->save();
             return;
         }
