@@ -13,8 +13,8 @@ read only mode
 
 ##Preparing the main plugin file
 
-I love code generation, but unfortunately haven't added any to the swpMVC framework. In settling for the next best thing, we can
-start by simply copying the contents of the swpmvc/starter_plugin folder to a new directory where our todos plugin will live.
+While swpMVC does not feature code generation, there is a template plugin included in the framework to get us started,
+so we first copy the contents of the swpmvc/starter_plugin folder to a new directory where our todos plugin will live.
 
 Once those files have been copied over, open up plugin.php in your editor, and make the following changes:
 
@@ -47,8 +47,8 @@ method on line 30 of your plugin.php file:
         
 ##First Route
 
-Our controller is being bootstrapped by the plugin class, so let's create the first route, and then the controller method to handle it.
-In the add\_routes method of the swpMVC\_Todos class, on line 40 of plugin.php, add the following code:
+Our controller is being bootstrapped by the plugin class, so let's create the first route, and then the controller method
+to handle it. In the add\_routes method of the swpMVC\_Todos class, on line 40 of plugin.php, add the following code:
 
     <?php
     
@@ -61,8 +61,8 @@ In the add\_routes method of the swpMVC\_Todos class, on line 40 of plugin.php, 
             return $routes;
         }
         
-Now in the TodosController class on line 5 of TodosController.php, let's add the todos_list method that will handle this request, with
-some dummy code to make sure it works.
+Now in the TodosController class on line 5 of TodosController.php, let's add the todos_list method that will handle this
+request, with some dummy code to make sure it works.
 
     <?php
     
@@ -78,14 +78,15 @@ Right now our method simply checks that a parameter has been passed (defined in 
 the route.) If not, it returns a 404 page provided by our WordPress theme, and if one is provided, will say hello using the parameter
 provided.
 
-To test this out, make sure the Todos plugin is active, and go to the /todos/developer url on our site. You should see a very
-underwhelming "Hello developer!" message there. Try a few other routes, like /todos/dawg, /todos/fool, etc, to see the dynamic
-goodness, and when you're bored of that, let's move on to more interesting stuff.
+To test this out, make sure the Todos plugin is active, and go to the /todos/developer url on our site. You should see a
+very underwhelming "Hello developer!" message there. Try a few other routes, like /todos/dawg, /todos/fool, etc, to see
+the dynamic goodness, and when you're bored of that, let's move on to more interesting stuff.
 
 ##First Real Route
 
-For our app to do anything (no pun,) we need to get some data into the database. Let's get the personal todos interface working so
-we can save a list and start seeing things work. First add the route to the add\_routes method in your plugin class as follows:
+For our app to do anything (no pun,) we need to get some data into the database. Let's get the personal todos interface
+working so we can save a list and start seeing things work. First add the route to the add\_routes method in your plugin
+class as follows:
 
     <?php
     
@@ -112,11 +113,12 @@ And now let's add the edit\_todos\_list method to the controller:
             echo 'More to come';
         }
         
-Right now all this method does is make sure you're logged in. You can test this by logging out of WordPress and going to /mytodos.
-You should be redirected to the login page, and on login redirected back to /mytodos. The result is again underwhelming.
+Right now all this method does is make sure you're logged in. You can test this by logging out of WordPress and going to
+/mytodos. You should be redirected to the login page, and on login redirected back to /mytodos.
+The result is again underwhelming.
 
-In order to get the most out of the process, we'll be using a custom table for our todos, and creating a model for them. Before we
-create the interface to edit a todo list, we'll need to take care of those parts.
+In order to get the most out of the process, we'll be using a custom table for our todos, and creating a model for them.
+Before we create the interface to edit a todo list, we'll need to take care of those parts.
 
 ##Creating a table
 
@@ -153,38 +155,47 @@ Now reactivate your plugin, and check your database. You should see the table th
 
 ##Creating Models
 
-Our edit route needs to look up a list of todos based on user, so we'll need to define the relationship between users and todos. We
-can do this by extending the User model that ships with the framework, and amending the $has_many relationship on our extended
-model. (For more on relationships and models in general, refer to the
+Our edit route needs to look up a list of todos based on user, so we'll need to define the relationship between users and
+todos. We can do this by updating the User model that ships with the framework, appending to the $has_many relationships
+definition. (For more on relationships and models in general, refer to the
 [swpMVC docs](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#models) and the
 [PHP ActiveRecord docs](http://phpactiverecord.org)).
 
-Create a file called todos_models.php in the models subdirectory of your plugin folder, and add the following code:
+In the main plugin file, immediately after the require\_dependencies method, add a method called update\_relationships as
+follows:
 
     <?php
     
-        class TodosUser extends User
+        private function update\_relationships()
         {
-        
+            User::$has_many[] = array('todos', 'class' => 'Todo', 'foreign_key' => 'user_id');
         }
         
-Open up wordpress_models.php in the models folder of the swpmvc plugin directory, and find the $has_many definition in the User
-class. Copy it, and add it to your TodosUser model, adding a definition for a Todos relationship as follows:
+Now add a call to that method in the plugin class constructor, right after require\_dependencies is called:
 
     <?php
     
-        class TodosUser extends User
+        private function __construct()
         {
-            public static $has_many = array(
-                array('posts', 'foreign_key' => 'post_author', 'limit' => 10, 'conditions' => array('post_status = ?', 'publish')),
-                array('comments', 'foreign_key' => 'user_id', 'limit' => 10),
-                array('meta', 'class' => 'UserMeta', 'foreign_key' => 'user_id'),
-                array('todos', 'class' => 'Todos', 'foreign_key' => 'user_id')
-            );
+            $this->require_dependencies();
+            $this->add_actions();
+            $this->update_relationships();
         }
+    
         
-Now that we've told ActiveRecord that our TodosUser has many todos, which are modeled by the Todo class, let's create the
-Todo class, which will model Todos based on the table our plugin has created. Add the following code to your todos_models.php:
+Now that we've told ActiveRecord that our User has many todos, which are modeled by the Todo class, let's create the
+Todo class, which will model Todos based on the table our plugin has created.
+
+First create a file called Todo.php in the models subdirectory of the plugin folder, and require it from the
+require\_dependencies of the plugin class as follows:
+
+    private function require_dependencies()
+    {
+        require_once(dirname(__FILE__).'/models/Todo.php');
+        require_once(dirname(__FILE__).'/controllers/TodosController.php');
+    }
+
+Add the following code to your Todo.php:
 
     <?php
     
@@ -197,56 +208,52 @@ Todo class, which will model Todos based on the table our plugin has created. Ad
             }
             
             public static $belongs_to = array(
-                array('user', 'class' => 'TodosUser', 'foreign_key' => 'user_id')
+                array('user', 'class' => 'User', 'foreign_key' => 'user_id')
             );
         }
     
-We've now told ActiveRecord that our Todos model is based off of the wp_swpmvc_todos table, (with a multisite aware prefix,)
-and that it belongs to a property called user, which is modeled using the TodosUser class, and linked up by the value of the user_id
-property of a Todos model instance.
+We've now told ActiveRecord that our Todos model is based off of the wp_swpmvc_todos table,
+(with a multisite aware prefix,) and that it belongs to a property called user, which is modeled using the User class,
+and linked up by the value of the user_id property of a Todos model instance.
 
-Note that for code organization purposes, it's often better to separate your models into their
-own files, particularly once you start to add additional logic and they grow in length. For our purposes, these models are simple
-enough to keep in one place.
+##Defining Model controls with a ControlRenderer
 
-##Defining Model controls
+We'll want to generate our form controls programatically and make sure that code is reusable, so let's
+[define a ControlRenderer ](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#model-extenders/controlrenderers)
+for the Todo model. First create a folder called control\_renderers in your plugin folder, and there add a file called
+TodoControlRenderer.php, then require it from the plugin class require\_dependencies method as follows:
 
-We'll want to take advantage of the models ability to render themselves, so let's
-[define the controls](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#models/public-static-function-controls)
-for a Todo item in our Todos class as follows:
+    private function require_dependencies()
+    {
+        require_once(dirname(__FILE__).'/models/Todo.php');
+        require_once(dirname(__FILE__).'/controllers/TodosController.php');
+        require_once(dirname(__FILE__).'/control_renderers/TodoControlRenderer.php');
+    }
 
-    <?php
-    
-        public static function controls()
-        {
-            return array(
-                'description' => array(
-                    'type' => 'input',
-                    'label' => 'Todo:'
-                ),
-                'completed' => array(
-                    'type' => 'input',
-                    'input_type' => 'checkbox',
-                    'label' => 'Completed?'
-                )
-            );
-        }
-        
-This is a good time to require our models in the require_dependencies method of the swpMVC_Todos class. Update it as follows:
+Now we will define the TodoControlRenderer class as follows:
 
     <?php
     
-        private function require_dependencies()
+    class TodoControlRenderer extends swpMVCBaseControlRenderer
+    {
+        public function description()
         {
-            require_once(dirname(__FILE__).'/controllers/TodosController.php');
-            require_once(dirname(__FILE__).'/models/todos_models.php');
+            return new swpMVCModelControl('input', 'Todo');
         }
         
-##New Todo Form View
+        public function completed()
+        {
+            return new swpMVCModelControl('input', 'Completed?', 'checkbox');
+        }
+    }
 
-Now that our Todos Model is aware of the form controls needed to interact with its properties, we can take advantage of this by
-creating a view with the correct tags to generate a form that will let us create a new Todo. Create a file called edit_todos.tpl in the
-views subdirectory of your plugin folder, and add the below HTML:
+        
+##New Todo Form Template
+
+Now that our we have a ControlRenderer capable of generating the form controls needed to interact with the Todo model
+properties, we can take advantage of this by creating a template with the correct tags to generate a form that will let us
+create a new Todo. Create a file called edit_todos.tpl in the templates subdirectory of your plugin folder,
+and add the below HTML:
 
     <div id="content">
         <!-- new_todo_form -->
@@ -263,35 +270,39 @@ views subdirectory of your plugin folder, and add the below HTML:
         <!-- /new_todo_form -->
     </div>
     
-##Rendering the view
+##Rendering the Template
 
-Before we can easily access our views, we need to set the view folder for our controller. Define a \_\_construct method for the
-TodosController as follows:
+Before we can easily access our templates, we need to set the view folder for our controller.
+Define a \_\_construct method for the TodosController as follows:
 
     <?php
     
         public function __construct()
         {
-            $this->_templatedir = dirname(__FILE__).'/../views/';
+            $this->_templatedir = dirname(__FILE__).'/../templates/';
             parent::__construct();
         }
 
-We can now render the view from our controller method. Replace the "more to come" notice in the TodosController edit_todos_list
-method with the code below:
+We can now render the template from our controller method. Replace the "more to come" notice in the TodosController
+edit_todos_list method with the code below:
 
     <?php
     
         public function edit_todos_list()
         {
             if (!is_user_logged_in()) return header('Location: '.wp_login_url( get_bloginfo('url').'/mytodos' ));
+            $new_todo = new Todo();
+            $new_todo->form_helper()->_prefix = 'new_todo';
+            new TodoControlRenderer($new_todo);
             get_header();
             echo $this->template('edit_todos')->replace('new_todo_form',
-                                    Todos::renderForm($this->template('edit_todos')->copy('new_todo_form'), 'new_todo')
+                                    $new_todo->render($this->template('edit_todos')->copy('new_todo_form'))
                                 );
             get_footer();
         }
 
-Reload /mytodos in your browser, and you should see something a bit more interesting, although it probably could use some styling.
+Reload /mytodos in your browser, and you should see something a bit more interesting,
+although it probably could use some styling.
 
 Create an assets subdirectory in your plugins folder, then a css folder in the assets folder, and in there place a style.css file with
 the below contents:
@@ -330,11 +341,13 @@ the below contents:
         font-style: italic;
     }
 
-Let's assume we want to include our stylesheet on all of the routes handled by this controller. The easy way to do this is using
-the controller [before method](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#controllers/public-function-before)
-and the controller [_styles property](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#controllers/this-_styles).
-Create the following before method to enqueue the stylesheet on all routes handled by the TodosController, adjusting the url
-to match your plugin folder structure:
+Let's assume we want to include our stylesheet on all of the routes handled by this controller. The easy way to do this
+is using the controller
+[before method](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#controllers/public-function-before)
+and the controller
+[_styles property](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#controllers/this-_styles).
+Create the following before method to enqueue the stylesheet on all routes handled by the TodosController, adjusting the
+url to match your plugin folder structure:
 
     <?php
     
@@ -349,9 +362,9 @@ Reload the /mytodos page again and you should see the styles applied to the form
 
 ##Processing form submission
 
-We've pointed our form to /todo/create, so we should probably point a route there and create a controller method to handle it.
-Once we're done, we'll refactor the way we define this in the view to prevent us having to update references to the route if we
-decide to change that url later.
+We've pointed our form to /todo/create, so we should probably point a route there and create a controller method to
+handle it. Once we're done, we'll refactor the way we define this in the view to prevent us having to update references
+to the route if we decide to change that url later.
 
 First add the following to the add_routes method of your swpMVC_Todos class:
 
@@ -390,8 +403,8 @@ Now we need to create the controller method we've pointed that route to. Add the
             return header('Location: '.$redirect);
         }
         
-With this in place, you can reload your /mytodos page, and submit a few times. We're not showing existing todo items yet, but if
-you look at the wp_swpmvc_todos table in your database, you should see the todo items being saved.
+With this in place, you can reload your /mytodos page, and submit a few times. We're not showing existing todo items yet,
+but if you look at the wp_swpmvc_todos table in your database, you should see the todo items being saved.
 
 Note the [link method](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/#controllers/self-link)
 used to generate the redirect. By creating our URLs this way, we will not need to update the references to these routes if
@@ -402,26 +415,61 @@ In your edit_todos.tpl view file, change the form tag to the following:
 
     <form method="post" action="<!-- target_link --><!-- /target_link -->">
     
-And then update the edit_todos method of the TodosController class to populate the target\_link tag as follows:
+We now have dynamic content that is not specific to only one model in our template, which is a good time to add a view to
+organize the population of this template.
+
+##Using a View
+
+Create a file called TodoListing.php in the views subdirectory of your plugin, and require it from the
+require\_dependencies method of your plugin class as follows:
+
+    private function require_dependencies()
+    {
+        require_once(dirname(__FILE__).'/models/Todo.php');
+        require_once(dirname(__FILE__).'/controllers/TodosController.php');
+        require_once(dirname(__FILE__).'/control_renderers/TodoControlRenderer.php');
+        require_once(dirname(__FILE__).'/views/TodoListing.php');
+    }
+
+Now add the following to the TodoListing.php file:
+
+    <?php
+    
+    class TodoListing extends swpMVCView
+    {
+        public function target_link()
+        {
+            return TodosController::link('TodosController', 'create_todo');
+        }
+        
+        public function new_todo_form($output)
+        {
+            return $this->new_todo->render(clone $output->copy('new_todo_form'));
+        }
+    }
+    
+We can now refactor the  edit_todos method of the TodosController class to use our view as follows:
 
     <?php
     
         public function edit_todos_list()
         {
             if (!is_user_logged_in()) return header('Location: '.wp_login_url( get_bloginfo('url').'/mytodos' ));
+            $view = new TodoListing();
+            $view->new_todo = new Todo();
+            $view->new_todo->form_helper()->_prefix = 'new_todo';
+            new TodoControlRenderer($view->new_todo);
             get_header();
-            echo $this->template('edit_todos')->replace('new_todo_form',
-                                        Todos::renderForm($this->template('edit_todos')->copy('new_todo_form'), 'new_todo')
-                                            ->replace('target_link', self::link('TodosController', 'create_todo'))
-                                    );
+            echo $view->render($this->template('edit_todos'));
             get_footer();
         }
         
 ##Showing existing Todos
 
-Now that we can get data in, it's time to get that data out, and show existing todos in the edit\_todos\_list method. First let's
-query for the Todos items, and log the results to the console so we can see what we get back. If you haven't yet, enable the
-PHP Quick Profiler on your WordPress installation by adding the following to your wp-config.php file:
+Now that we can get data in, it's time to get that data out, and show existing todos in the TodoListing view. First let's
+query for the Todos items in the edit\_todos\_list controller method, and log the results to the console so we can see
+what we get back. If you haven't yet, enable the PHP Quick Profiler on your WordPress installation by adding the
+following to your wp-config.php file:
 
     <?php
     
@@ -436,25 +484,26 @@ Now update the edit\_todos\_list method of the TodosController to the following:
             if (!is_user_logged_in()) return header('Location: '.wp_login_url( get_bloginfo('url').'/mytodos' ));
             $todos = Todos::all(array('conditions' => array('user_id = ?', get_current_user_id())));
             Console::log($todos);
+            $view = new TodoListing();
+            $view->new_todo = new Todo();
+            $view->new_todo->form_helper()->_prefix = 'new_todo';
+            new TodoControlRenderer($view->new_todo);
             get_header();
-            echo $this->template('edit_todos')->replace('new_todo_form',
-                                        Todos::renderForm($this->template('edit_todos')->copy('new_todo_form'), 'new_todo')
-                                            ->replace('target_link', self::link('TodosController', 'create_todo'))
-                                    );
+            echo $view->render($this->template('edit_todos'));
             get_footer();
         }
         
-Refresh your /mytodos page and look in the Console of the PHP Quick Profiler at the bottom of the page, and you'll see an array
-containing any Todos you've submitted using the form we've created. Now that we're getting them from the db, let's update our view
-and controller to populate them in the /mytodos route.
+Refresh your /mytodos page and look in the Console of the PHP Quick Profiler at the bottom of the page, and you'll see an
+array containing any Todos you've submitted using the form we've created. Now that we're getting them from the db, let's
+update our template and view to populate them in the /mytodos route.
 
 Add the following to your edit_todos.tpl file:
 
     <div id="content">
-        <!-- existing_todos -->
+        <!-- existing_todos_block -->
             <h3>Existing Todos</h3>
             <div class="existing_todos">
-                <!-- existing_todo_form -->
+                <!-- existing_todos -->
                     <div class="existing_todo">
                         <span class="existing_todo_description"><!-- description --><!-- /description --></span>
                         <div class="existing_todo_desc_input">
@@ -464,35 +513,51 @@ Add the following to your edit_todos.tpl file:
                             <!-- control_completed --><!-- /control_completed -->
                         </div>
                     </div>
-                <!-- /existing_todo_form -->
+                <!-- /existing_todos -->
             </div>
             <hr />
-        <!-- /existing_todos -->
+        <!-- /existing_todos_block -->
         (...new todo form markup)
+        
+Note the existing\_todos\_block tags, which denote the area that will be automatically stripped out if there are no
+existing todos.
 
-And then update the edit\_todos\_list method of the TodosController as follows:
+Next add an existing\_todos method to the TodoListing view as follows:
     
+    public function existing_todos($output)
+    {
+        $r = '';
+        foreach($this->existing_todos as $todo)
+        {
+            $todo->form_helper()->_prefix = 'todo_'.$todo->id;
+            $r .= $todo->render(clone $output->copy('existing_todos'));
+        }
+        return $r;
+    }
+    
+We need to set the queried todos on the view so the existing\_todos method on the view has access to them, and
+we need to add our control renderer to the queried todos so they can handle their form elements. We do that by
+assigning the results of the query directly to the view, then using the batch\_inject method on the
+TodoControlRenderer class to attach a TodoControlRenderer to each todo object in the array:
+
     <?php
     
         public function edit_todos_list()
         {
             if (!is_user_logged_in()) return header('Location: '.wp_login_url( get_bloginfo('url').'/mytodos' ));
-            $todos = Todos::all(array('conditions' => array('user_id = ?', get_current_user_id())));
+            $view = new TodoListing();
+            $view->existing_todos = Todo::all(array('conditions' => array('user_id = ?', get_current_user_id())));
+            TodoControlRenderer::batch_inject($view->existing_todos);
+            $view->new_todo = new Todo();
+            $view->new_todo->form_helper()->_prefix = 'new_todo';
+            new TodoControlRenderer($view->new_todo);
             get_header();
-            $existing_todos = '';
-            foreach($todos as $todo)
-            {
-                $todo->form_helper()->_prefix = 'todo_'.$todo->id;
-                $existing_todos .= $todo->render($this->template('edit_todos')->copy('existing_todo_form'));
-            }
-            $output = $this->template('edit_todos')->replace('new_todo_form',
-                                        Todos::renderForm($this->template('edit_todos')->copy('new_todo_form'), 'new_todo')
-                                            ->replace('target_link', self::link('TodosController', 'create_todo'))
-                                    )->replace('existing_todo_form', $existing_todos);
-            if (empty($todos)) $output = $output->replace('existing_todos', '');
+            $output = $view->render($this->template('edit_todos'));
             echo $output;
             get_footer();
         }
+
+
         
 Now let's add a little javascript to make our existing todos listing editable. In the assets subdirectory of your plugin folder, create
 a folder called js, and in that, place a file called edit\_todos.js with the following contents:
@@ -593,9 +658,9 @@ Add the following two methods to your TodosController to handle these new routes
             return;
         }
         
-Our /mytodos page is now fully functional (could use a delete feature but I'll leave that to you to implement.) Let's go back
-and refactor the script localization to use the controller::link methods instead of hard coded URLs. Update the script localization
-definitions in the edit\_todos\_list method of the TodosController as follows:
+Our /mytodos page is now fully functional (could use a delete feature but I'll leave that to you to implement.)
+Let's go back and refactor the script localization to use the controller::link methods instead of hard coded URLs.
+Update the script localization definitions in the edit\_todos\_list method of the TodosController as follows:
 
     <?php
     
@@ -636,7 +701,7 @@ And then the following method to your TodosController:
         public function show_users_todos($user_nicename = false)
         {
             if (!$user_nicename) return $this->set404();
-            $user = TodosUser::find(array('conditions' => array('user_nicename = ?', $user_nicename),
+            $user = User::find(array('conditions' => array('user_nicename = ?', $user_nicename),
                         'include' => 'todos'));
             if (!$user) return $this->set404();
             get_header();
@@ -647,37 +712,50 @@ And then the following method to your TodosController:
 Go to /todos/admin (or whatever your user_nicename is) and you should see a user object in the PHP Quick Profiler Console,
 with the related todos nested in the relationships property.
 
-Add a file called show_users_todos.tpl to the views subdirectory of your plugin folder, with the following contents:
+Add a file called show_users_todos.tpl to the templates subdirectory of your plugin folder, with the following contents:
 
     <div id="content">
-        <!-- has_todos -->
-            <h3><!-- display_name --><!-- /display_name -->s Todos</h3>
+        <h3><!-- display_name --><!-- /display_name -->s Todos</h3>
+        <!-- existing_todos_block -->
             <!-- existing_todos -->
                 <div class="existing_todo completed_<!-- completed --><!-- /completed -->">
                     <!-- description --><!-- description -->
                 </div>
             <!-- /existing_todos -->
-        <!-- /has_todos -->
+        <!-- /existing_todos_block -->
+        <!-- no_todos_block -->
+            <h5>No todos yet</h5>
+        <!-- /no_todos_block -->
     </div>
+
+Next we need to add two new methods to the TodosListing view to handle our two new template tags:
+
+    public function no_todos_block()
+    {
+        return empty($this->existing_todos);
+    }
     
-Then update the TodosController->show\_users\_todos method to render the view as follows:
+    public function display_name()
+    {
+        return $this->user->display_name;
+    }
+    
+
+Now we can update the TodosController->show\_users\_todos method to render the view as follows:
 
     <?php
     
         public function show_users_todos($user_nicename = false)
         {
             if (!$user_nicename) return $this->set404();
-            $user = TodosUser::find(array('conditions' => array('user_nicename = ?', $user_nicename),
+            $user = User::find(array('conditions' => array('user_nicename = ?', $user_nicename),
                         'include' => 'todos'));
             if (!$user) return $this->set404();
+            $view = new TodosListing();
+            $view->user = $user;
+            $view->existing_todos = $user->todos;
             get_header();
-            $existing_todos = '';
-            foreach($user->todos as $todo)
-                $existing_todos .= $todo->render($this->template('show_users_todos')->copy('existing_todos'));
-            $output = $user->render($this->template('show_users_todos'))->replace('existing_todos', $existing_todos);
-            if ($existing_todos === '')
-                $output = $output->replace('has_todos', '<h3>'.$user->display_name.' doesn\'t have any todos yet.</h3>');
-            echo $output;
+            echo $view->render($this->template('show_users_todos'));
             get_footer();
         }
         
@@ -722,33 +800,73 @@ Now add the following to a new file called index.tpl in the views subdirectory o
                 <span><!-- unfinished_count --><!-- /unfinished_count --> remaining</span>
             </div>
         <!-- /todos_user -->
+        <!-- no_todos_users_block -->
+            <h5>None yet</h5>
+        <!-- /no_todos_users_block -->
     </div>
     
-And update your controller method with the following:
+Next we'll create a view to render this template. Add TodoUsersListing.php to the views subdirectory of your plugin,
+require it from your plugin class' require\_dependencies method, and add the following code to it:
+
+    <?php
+    
+    class TodosUserListing extends swpMVCView
+    {
+        public function todos_user($output)
+        {
+            $r = '';
+            foreach($this->users as $user)
+                $r .= $user->render(clone $output->copy('todos_user'));
+            return $r;
+        }
+        
+        public function no_todos_users()
+        {
+            return empty($this->users);
+        }
+    }
+    
+We'll also need a renderer for a Todos User, so that view\_link, finished\_count, and unfinished\_count will be
+populated with the correct values for each user by the TodosUserListing::todos\_user method. Create a file called
+TodosUserRenderer.php, save it in the renderers subdirectory of your plugin, require it from the require\_dependencies
+method of your plugin class, and add the following code:
+
+    <?php
+    
+    class TodosUserRenderer extends swpMVCBaseRenderer
+    {
+        public function view_link()
+        {
+            return TodosController::link('TodosController', 'show_users_todos', array($this->model->user_nicename));
+        }
+        
+        public function finished_count()
+        {
+            return count(_::filter($this->model->todos, function($td) { return intval($td->completed) === 1; }));
+        }
+        
+        public function unfinished_count()
+        {
+            return count(_::filter($this->model->todos, function($td) { return intval($td->completed) === 0; }));
+        }
+    }
+    
+Finally update your controller method with the following:
 
     public function index()
     {
-        $ids = _::map(Todos::all(array('select' => 'DISTINCT user_id')), function($td) { return $td->user_id; });
-        $users = TodosUser::find($ids, array('include' => 'todos'));
+        $ids = _::map(Todo::all(array('select' => 'DISTINCT user_id')), function($td) { return $td->user_id; });
+        $users = User::find($ids, array('include' => 'todos'));
         if (!is_array($users)) $users = array($users);
+        $view = new TodosUserListing();
+        $view->users = $users;
+        TodosUserRenderer::batch_inject($view->users);
         get_header();
-        $todos_users = '';
-        foreach($users as $user)
-        {
-            $finished_count = count(_::filter($user->todos, function($td) { return intval($td->completed) === 1; }));
-            $unfinished_count = count(_::filter($user->todos, function($td) { return intval($td->completed) === 0; }));
-            $todos_users .= $user->render($this->template('index')->copy('todos_user'))
-                                            ->replace('finished_count', $finished_count)
-                                            ->replace('unfinished_count', $unfinished_count)
-                                            ->replace('view_link',
-                                                    self::link('TodosController', 'show_users_todos', array($user->user_nicename)));
-        }
-        if ($todos_users === '') $todos_users = '<h3>No users with Todos yet.</h3>';
-        echo $this->template('index')->replace('todos_user', $todos_users);
+        echo $view->render($this->template('index'));
         get_footer();
     }
     
-That completes the Todos App tutorial, and hopefully gives you a reasonably in-depth view of the swpMVC framework. For further
-detail, see the [API Docs](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/) or
+That completes the Todos App tutorial, and hopefully gives you a reasonably in-depth view of the swpMVC framework.
+For further detail, see the [API Docs](http://streetwise-media.github.com/Streetwise-Wordpress-MVC/) or
 [open an issue](https://github.com/Streetwise-Media/Streetwise-Wordpress-MVC/issues?state=open) on the framework repo
 or the repo for this Todo plugin.

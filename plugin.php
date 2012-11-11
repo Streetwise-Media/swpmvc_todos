@@ -18,6 +18,7 @@ class swpMVC_Todos
     {
         $this->require_dependencies();
         $this->add_actions();
+        $this->update_relationships();
     }
     
     public static function instance()
@@ -31,6 +32,11 @@ class swpMVC_Todos
     {
         require_once(dirname(__FILE__).'/controllers/TodosController.php');
         require_once(dirname(__FILE__).'/models/todos_models.php');
+    }
+    
+    private function update_relationships()
+    {
+        User::$has_many[] = array('todos', 'class' => 'Todos', 'foreign_key' => 'user_id');
     }
     
     private function add_actions()
