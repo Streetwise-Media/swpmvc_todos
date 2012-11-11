@@ -166,7 +166,7 @@ follows:
 
     <?php
     
-        private function update\_relationships()
+        private function update_relationships()
         {
             User::$has_many[] = array('todos', 'class' => 'Todo', 'foreign_key' => 'user_id');
         }
@@ -178,8 +178,8 @@ Now add a call to that method in the plugin class constructor, right after requi
         private function __construct()
         {
             $this->require_dependencies();
-            $this->add_actions();
             $this->update_relationships();
+            $this->add_actions();
         }
     
         
@@ -199,7 +199,7 @@ Add the following code to your Todo.php:
 
     <?php
     
-        class Todos extends swpMVCBaseModel
+        class Todo extends swpMVCBaseModel
         {
             public static function tablename()
             {
@@ -397,7 +397,7 @@ Now we need to create the controller method we've pointed that route to. Add the
             if (!is_user_logged_in()) return header('Location: '.$redirect);
             if (!$_POST['new_todo'] or !is_array($_POST['new_todo']) or !isset($_POST['new_todo']))
                 return header('Location: '.$redirect);
-            $new_todo = new Todos($_POST['new_todo']);
+            $new_todo = new Todo($_POST['new_todo']);
             $new_todo->user_id = get_current_user_id();
             $new_todo->save();
             return header('Location: '.$redirect);
@@ -482,7 +482,7 @@ Now update the edit\_todos\_list method of the TodosController to the following:
         public function edit_todos_list()
         {
             if (!is_user_logged_in()) return header('Location: '.wp_login_url( get_bloginfo('url').'/mytodos' ));
-            $todos = Todos::all(array('conditions' => array('user_id = ?', get_current_user_id())));
+            $todos = Todo::all(array('conditions' => array('user_id = ?', get_current_user_id())));
             Console::log($todos);
             $view = new TodoListing();
             $view->new_todo = new Todo();
@@ -638,7 +638,7 @@ Add the following two methods to your TodosController to handle these new routes
             if(!isset($_POST['description']) or !is_string($_POST['description']) or trim($_POST['description']) === '')
                 return;
             if (!is_user_logged_in()) return;
-            $todo = Todos::find($id);
+            $todo = Todo::find($id);
             if (!$todo) return;
             if ($todo->user_id !== get_current_user_id()) return;
             $todo->description = $_POST['description'];
@@ -650,7 +650,7 @@ Add the following two methods to your TodosController to handle these new routes
         {
             if(!$id) return;
             if(!is_user_logged_in()) return;
-            $todo = Todos::find($id);
+            $todo = Todo::find($id);
             if (!$todo) return;
             if ($todo->user_id !== get_current_user_id()) return;
             $todo->completed = (intval($todo->completed) === 0) ? 1 : 0;
@@ -728,9 +728,9 @@ Add a file called show_users_todos.tpl to the templates subdirectory of your plu
         <!-- /no_todos_block -->
     </div>
 
-Next we need to add two new methods to the TodosListing view to handle our two new template tags:
+Next we need to add two new methods to the TodoListing view to handle our two new template tags:
 
-    public function no_todos_block()
+    public function no_todos()
     {
         return empty($this->existing_todos);
     }
@@ -751,7 +751,7 @@ Now we can update the TodosController->show\_users\_todos method to render the v
             $user = User::find(array('conditions' => array('user_nicename = ?', $user_nicename),
                         'include' => 'todos'));
             if (!$user) return $this->set404();
-            $view = new TodosListing();
+            $view = new TodoListing();
             $view->user = $user;
             $view->existing_todos = $user->todos;
             get_header();
@@ -763,7 +763,7 @@ Reload todos/admin and have a look. Easy, huh? Let's take care of that last rout
 
 ##Showing an Index of users with Todos
 
-Again we start adding the route in the plugin class add\_routes method:
+Again we start by adding the route in the plugin class add\_routes method:
 
     <?php
     
@@ -778,7 +778,7 @@ Then we start the controller method and get our data:
     
         public function index()
         {
-            $ids = _::map(Todos::all(array('select' => 'DISTINCT user_id')), function($td) { return $td->user_id; });
+            $ids = _::map(Todo::all(array('select' => 'DISTINCT user_id')), function($td) { return $td->user_id; });
             $users = TodosUser::find($ids, array('include' => 'todos'));
             get_header();
             Console::log($users);
@@ -805,7 +805,7 @@ Now add the following to a new file called index.tpl in the views subdirectory o
         <!-- /no_todos_users_block -->
     </div>
     
-Next we'll create a view to render this template. Add TodoUsersListing.php to the views subdirectory of your plugin,
+Next we'll create a view to render this template. Add TodosUserListing.php to the views subdirectory of your plugin,
 require it from your plugin class' require\_dependencies method, and add the following code to it:
 
     <?php
@@ -822,7 +822,7 @@ require it from your plugin class' require\_dependencies method, and add the fol
         
         public function no_todos_users()
         {
-            return empty($this->users);
+            return !empty($this->users);
         }
     }
     
